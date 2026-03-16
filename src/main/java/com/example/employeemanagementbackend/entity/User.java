@@ -31,6 +31,9 @@ public class User extends Person {
         USER
     }
 
+    @Column(name = "is_active", nullable = false)
+    private boolean active = true;
+
     // Polymorphism — User identifies by username
     @Override
     public String getIdentifier() {

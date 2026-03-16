@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class EmployeeResponseDTO {
 
-    private Long id;
     private Long employeeId;
     private String firstName;
     private String lastName;
@@ -22,5 +21,4 @@ public class EmployeeResponseDTO {
     private String departmentName;
     private BigDecimal salary;
     private Boolean active;
-    private LocalDateTime createdAt;
 }

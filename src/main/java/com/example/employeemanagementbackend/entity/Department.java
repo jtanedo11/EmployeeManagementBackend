@@ -18,4 +18,8 @@ public class Department {
 
     @Column(nullable = false)
     private String name;
+
+    @Column(name = "is_active", nullable = false)
+    private boolean active = true;
+
 }

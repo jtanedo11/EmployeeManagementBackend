@@ -12,7 +12,6 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class EmployeeRequestDTO {
 
-    private Long employeeId;
     private String firstName;
     private String lastName;
     private LocalDate dateOfBirth;
