@@ -7,6 +7,7 @@ import com.example.employeemanagementbackend.entity.Employee;
 import com.example.employeemanagementbackend.exception.ResourceNotFoundException;
 import com.example.employeemanagementbackend.repository.DepartmentRepository;
 import com.example.employeemanagementbackend.repository.EmployeeRepository;
+import com.example.employeemanagementbackend.util.MessageUtil;
 import com.example.employeemanagementbackend.util.ValidationUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,6 +27,7 @@ public class EmployeeService {
 
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
+    private final MessageUtil messageUtil;
 
     // ───── CRUD ─────
 
@@ -36,21 +38,21 @@ public class EmployeeService {
         ValidationUtil.validateName(dto.getLastName(), "Last name");
 
         if (dto.getDateOfBirth() == null) {
-            throw new IllegalArgumentException("Date of birth is required.");
+            throw new IllegalArgumentException(messageUtil.get("employee.dob.required"));
         }
 
         // Age validation — must be at least 18
         int age = calculateAge(dto.getDateOfBirth());
         if (age < 18) {
-            throw new IllegalArgumentException("Employee must be at least 18 years old.");
+            throw new IllegalArgumentException(messageUtil.get("employee.age.minimum"));
         }
 
         if (dto.getSalary() == null || dto.getSalary().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Salary must be greater than zero.");
+            throw new IllegalArgumentException(messageUtil.get("employee.salary.invalid"));
         }
 
         Department department = departmentRepository.findById(dto.getDepartmentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Department not found."));
+                .orElseThrow(() -> new ResourceNotFoundException(messageUtil.get("department.not.found.generic")));
 
         Employee employee = new Employee();
         employee.setEmployeeId(generateEmployeeId());
@@ -66,7 +68,7 @@ public class EmployeeService {
 
     public EmployeeResponseDTO getById(Long id) {
         Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(messageUtil.get("employee.not.found", id)));
         return mapToResponseDTO(employee);
     }
 
@@ -81,7 +83,7 @@ public class EmployeeService {
 
     public EmployeeResponseDTO update(Long id, EmployeeRequestDTO dto) {
         Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(messageUtil.get("employee.not.found", id)));
 
         if (dto.getFirstName() != null && !dto.getFirstName().trim().isEmpty()) {
             ValidationUtil.validateName(dto.getFirstName(), "First name");
@@ -93,7 +95,7 @@ public class EmployeeService {
         }
         if (dto.getDateOfBirth() != null) {
             int age = calculateAge(dto.getDateOfBirth());
-            if (age < 18) throw new IllegalArgumentException("Employee must be at least 18 years old.");
+            if (age < 18) throw new IllegalArgumentException(messageUtil.get("employee.age.minimum"));
             employee.setDateOfBirth(dto.getDateOfBirth());
         }
         if (dto.getSalary() != null && dto.getSalary().compareTo(BigDecimal.ZERO) > 0) {
@@ -101,17 +103,16 @@ public class EmployeeService {
         }
         if (dto.getDepartmentId() != null) {
             Department department = departmentRepository.findById(dto.getDepartmentId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Department not found."));
+                    .orElseThrow(() -> new ResourceNotFoundException(messageUtil.get("department.not.found.generic")));
             employee.setDepartment(department);
         }
-
         return mapToResponseDTO(employeeRepository.save(employee));
     }
 
     // Deactivate
     public void delete(Long id) {
         Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(messageUtil.get("employee.not.found", id)));
         employee.setActive(false);
         employeeRepository.save(employee);
     }
@@ -119,14 +120,11 @@ public class EmployeeService {
     // Reactivate
     public EmployeeResponseDTO activate(Long id) {
         Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(messageUtil.get("employee.not.found", id)));
 
-        if (!employee.getDepartment().isActive()) {
+        if (!employee.getDepartment().isActive())
             throw new IllegalArgumentException(
-                    "Cannot reactivate employee because their department '" +
-                            employee.getDepartment().getName() + "' is inactive. " +
-                            "Please reactivate the department first.");
-        }
+                    messageUtil.get("employee.department.inactive", employee.getDepartment().getName()));
 
         employee.setActive(true);
         return mapToResponseDTO(employeeRepository.save(employee));
@@ -135,20 +133,21 @@ public class EmployeeService {
 
     public EmployeeResponseDTO getByEmployeeId(Long employeeId) {
         Employee employee = employeeRepository.findByEmployeeId(employeeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with employeeId: " + employeeId));
+                .orElseThrow(() -> new ResourceNotFoundException(messageUtil.get("employee.not.found.employee.id", employeeId)));
         return mapToResponseDTO(employee);
     }
 
     // ADD THIS
     public List<EmployeeResponseDTO> searchByName(String name) {
         if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException("Name search term is required.");
+            throw new IllegalArgumentException(messageUtil.get("employee.name.search.required"));
         }
         List<Employee> employees = employeeRepository
                 .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(name, name);
 
         if (employees.isEmpty()) {
-            throw new ResourceNotFoundException("No employees found with name: " + name);
+            throw new ResourceNotFoundException(messageUtil.get("employee.name.not.found", name));
+
         }
 
         List<EmployeeResponseDTO> result = new ArrayList<>();
@@ -170,8 +169,8 @@ public class EmployeeService {
         // minAge=30 → show employees aged 30 and above → dateOfBirth <= today minus 30 years
         LocalDate minDob = (minAge != null) ? LocalDate.now().minusYears(minAge) : null;
 
-// maxAge=31 → show employees aged 31 and below → dateOfBirth >= today minus 31 years minus 1 day + 1 day
-// simplified: dateOfBirth >= today minus (maxAge + 1) years + 1 day
+        // maxAge=31 → show employees aged 31 and below → dateOfBirth >= today minus 31 years minus 1 day + 1 day
+        // simplified: dateOfBirth >= today minus (maxAge + 1) years + 1 day
         LocalDate maxDob = (maxAge != null) ? LocalDate.now().minusYears(maxAge + 1).plusDays(1) : null;
         return employeeRepository.searchAndFilterPageable(
                         cleanName, departmentId, active, minDob, maxDob, PageRequest.of(page, size))
@@ -182,10 +181,10 @@ public class EmployeeService {
 
     public List<EmployeeResponseDTO> filterByDepartment(Long departmentId) {
         if (departmentId == null) {
-            throw new IllegalArgumentException("Department ID is required.");
+            throw new IllegalArgumentException(messageUtil.get("department.not.found.generic"));
         }
         departmentRepository.findById(departmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + departmentId));
+                .orElseThrow(() -> new ResourceNotFoundException(messageUtil.get("department.not.found", departmentId)));
         List<Employee> employees = employeeRepository.findByDepartmentIdAndActive(departmentId, true);
         List<EmployeeResponseDTO> result = new ArrayList<>();
         for (Employee emp : employees) {
@@ -198,7 +197,7 @@ public class EmployeeService {
 
     public Page<EmployeeResponseDTO> getByDepartmentPaged(Long departmentId, Boolean active, int page, int size) {
         departmentRepository.findById(departmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + departmentId));
+                .orElseThrow(() -> new ResourceNotFoundException(messageUtil.get("department.not.found", departmentId)));
         return employeeRepository
                 .findByDepartmentIdAndActivePaged(departmentId, active, PageRequest.of(page, size))
                 .map(this::mapToResponseDTO);
@@ -208,8 +207,8 @@ public class EmployeeService {
         LocalDate minDob = (minAge != null) ? LocalDate.now().minusYears(minAge) : null;
         LocalDate maxDob = (maxAge != null) ? LocalDate.now().minusYears(maxAge + 1).plusDays(1) : null;
 
-        // 'asc' = youngest first = dateOfBirth DESC (most recent birth date first)
-        // 'desc' = oldest first = dateOfBirth ASC (earliest birth date first)
+        // 'asc' = youngest first = dateOfBirth DESC (most recent birthdate first)
+        // 'desc' = oldest first = dateOfBirth ASC (earliest birthdate first)
         Sort.Direction direction = "asc".equals(sort) ? Sort.Direction.DESC : Sort.Direction.ASC;
         PageRequest pageRequest  = PageRequest.of(page, size, Sort.by(direction, "dateOfBirth"));
 

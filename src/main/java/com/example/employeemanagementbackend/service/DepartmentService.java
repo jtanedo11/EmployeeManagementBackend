@@ -7,6 +7,7 @@ import com.example.employeemanagementbackend.exception.DuplicateEntryException;
 import com.example.employeemanagementbackend.exception.ResourceNotFoundException;
 import com.example.employeemanagementbackend.repository.DepartmentRepository;
 import com.example.employeemanagementbackend.repository.EmployeeRepository;
+import com.example.employeemanagementbackend.util.MessageUtil;
 import com.example.employeemanagementbackend.util.ValidationUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ public class DepartmentService {
 
     private final DepartmentRepository departmentRepository;
     private final EmployeeRepository employeeRepository;
+    private final MessageUtil messageUtil;
 
     // ADD
     public DepartmentResponseDTO addDepartment(DepartmentRequestDTO request) {
@@ -27,7 +29,7 @@ public class DepartmentService {
         ValidationUtil.validateDepartmentName(request.getName());
 
         if (departmentRepository.findByName(request.getName()).isPresent()) {
-            throw new DuplicateEntryException("Department already exists: " + request.getName());
+            throw new DuplicateEntryException(messageUtil.get("department.duplicate", request.getName()));
         }
 
         Department department = new Department();
@@ -49,19 +51,19 @@ public class DepartmentService {
     // GET BY ID
     public DepartmentResponseDTO getDepartmentById(Long id) {
         Department department = departmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(messageUtil.get("department.not.found", id)));
         return mapToResponse(department);
     }
 
     // SEARCH BY NAME
     public List<DepartmentResponseDTO> searchByName(String name) {
         if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException("Department name search term is required.");
+            throw new IllegalArgumentException(messageUtil.get("department.name.search.required"));
         }
         List<Department> departments = departmentRepository.findByNameContainingIgnoreCase(name);
 
         if (departments.isEmpty()) {
-            throw new ResourceNotFoundException("No departments found with name: " + name);
+            throw new ResourceNotFoundException(messageUtil.get("department.name.not.found", name));
         }
 
         List<DepartmentResponseDTO> result = new ArrayList<>();
@@ -74,12 +76,12 @@ public class DepartmentService {
     // UPDATE
     public DepartmentResponseDTO updateDepartment(Long id, DepartmentRequestDTO request) {
         Department department = departmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(messageUtil.get("department.not.found", id)));
 
         ValidationUtil.validateDepartmentName(request.getName());
 
         if (departmentRepository.findByName(request.getName()).isPresent()) {
-            throw new DuplicateEntryException("Department name already exists: " + request.getName());
+            throw new DuplicateEntryException(messageUtil.get("department.name.duplicate", request.getName()));
         }
 
         department.setName(request.getName());
@@ -89,7 +91,7 @@ public class DepartmentService {
     // REACTIVATE
     public DepartmentResponseDTO activateDepartment(Long id) {
         Department department = departmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(messageUtil.get("department.not.found", id)));
         department.setActive(true);
         return mapToResponse(departmentRepository.save(department));
     }
@@ -97,12 +99,10 @@ public class DepartmentService {
     // DELETE — soft delete with employee check
     public void deleteDepartment(Long id) {
         Department department = departmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(messageUtil.get("department.not.found", id)));
 
         if (employeeRepository.existsByDepartmentIdAndActive(id, true)) {
-            throw new IllegalArgumentException(
-                    "Cannot deactivate department because it has active employees. " +
-                            "Please reassign or deactivate all employees first.");
+            throw new IllegalArgumentException(messageUtil.get("department.has.active.employees"));
         }
 
         department.setActive(false);

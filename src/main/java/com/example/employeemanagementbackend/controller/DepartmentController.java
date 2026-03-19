@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/departments")
+@RequestMapping("${api.departments.base}")
 @RequiredArgsConstructor
 public class DepartmentController {
 
@@ -30,26 +30,26 @@ public class DepartmentController {
     }
 
     // GET BY ID
-    @GetMapping("/{id}")
+    @GetMapping("${api.departments.get.by.id}")
     public ResponseEntity<DepartmentResponseDTO> getDepartmentById(@PathVariable Long id) {
         return ResponseEntity.ok(departmentService.getDepartmentById(id));
     }
 
     // UPDATE
-    @PutMapping("/{id}")
+    @PutMapping("${api.departments.update}")
     public ResponseEntity<DepartmentResponseDTO> updateDepartment(@PathVariable Long id,
                                                                   @RequestBody DepartmentRequestDTO request) {
         return ResponseEntity.ok(departmentService.updateDepartment(id, request));
     }
 
     // REACTIVATE
-    @PatchMapping("/{id}/activate")
+    @PatchMapping("${api.departments.activate}")
     public ResponseEntity<DepartmentResponseDTO> activateDepartment(@PathVariable Long id) {
         return ResponseEntity.ok(departmentService.activateDepartment(id));
     }
 
     // DEACTIVATE
-    @DeleteMapping("/{id}")
+    @DeleteMapping("${api.departments.delete}")
     public ResponseEntity<String> deleteDepartment(@PathVariable Long id) {
         departmentService.deleteDepartment(id);
         return ResponseEntity.ok("Department deactivated successfully.");

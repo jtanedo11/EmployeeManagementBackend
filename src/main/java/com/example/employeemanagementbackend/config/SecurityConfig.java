@@ -3,8 +3,10 @@ package com.example.employeemanagementbackend.config;
 import com.example.employeemanagementbackend.service.CustomUserDetailsService;
 import com.example.employeemanagementbackend.config.JwtAuthFilter;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,10 +21,20 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
+@PropertySource("classpath:api.properties")
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final CustomUserDetailsService userDetailsService;
+
+    @Value("${api.auth.base}/**")
+    private String authPath;
+
+    @Value("${api.dev.base}/**")
+    private String devPath;
+
+    @Value("${api.users.base}/**")
+    private String usersPath;
 
     public SecurityConfig(JwtAuthFilter jwtAuthFilter, CustomUserDetailsService userDetailsService) {
         this.jwtAuthFilter = jwtAuthFilter;
@@ -35,9 +47,9 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/dev/**").permitAll()
-                        .requestMatchers("/users/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(authPath).permitAll()
+                        .requestMatchers(devPath).permitAll()
+                        .requestMatchers(usersPath).hasAuthority("ROLE_ADMIN")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

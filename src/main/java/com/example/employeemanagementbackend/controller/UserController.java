@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("${api.users.base}")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -30,25 +30,25 @@ public class UserController {
     }
 
     // GET BY ID
-    @GetMapping("/{id}")
+    @GetMapping("${api.users.get.by.id}")
     public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
     // SEARCH BY USERNAME
-    @GetMapping("/search")
+    @GetMapping("${api.users.search}")
     public ResponseEntity<List<UserResponseDTO>> searchByUsername(@RequestParam String username) {
         return ResponseEntity.ok(userService.searchByUsername(username));
     }
 
     // FILTER BY ROLE
-    @GetMapping("/filter")
+    @GetMapping("${api.users.filter}")
     public ResponseEntity<List<UserResponseDTO>> filterByRole(@RequestParam String role) {
         return ResponseEntity.ok(userService.filterByRole(role));
     }
 
     // COMBINED SEARCH + FILTER
-    @GetMapping("/search-filter")
+    @GetMapping("${api.users.search.filter}")
     public ResponseEntity<List<UserResponseDTO>> searchAndFilter(
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String role) {
@@ -56,14 +56,14 @@ public class UserController {
     }
 
     // UPDATE
-    @PutMapping("/{id}")
+    @PutMapping("${api.users.update}")
     public ResponseEntity<UserResponseDTO> updateUser(@PathVariable Long id,
                                                       @RequestBody UserRequestDTO request) {
         return ResponseEntity.ok(userService.updateUser(id, request));
     }
 
     // DELETE
-    @DeleteMapping("/{id}")
+    @DeleteMapping("${api.users.delete}")
     public ResponseEntity<String> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.ok("User deleted successfully.");

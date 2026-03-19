@@ -6,6 +6,7 @@ import com.example.employeemanagementbackend.entity.User;
 import com.example.employeemanagementbackend.exception.DuplicateEntryException;
 import com.example.employeemanagementbackend.exception.ResourceNotFoundException;
 import com.example.employeemanagementbackend.repository.UserRepository;
+import com.example.employeemanagementbackend.util.MessageUtil;
 import com.example.employeemanagementbackend.util.ValidationUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -20,6 +21,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final MessageUtil messageUtil;
 
     // ADD
     public UserResponseDTO addUser(UserRequestDTO request) {
@@ -31,13 +33,13 @@ public class UserService {
         ValidationUtil.validateUsername(request.getUsername());
 
         if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
-            throw new IllegalArgumentException("Password is required.");
+            throw new IllegalArgumentException(messageUtil.get("user.password.required"));
         }
         if (request.getPassword().length() < 8) {
-            throw new IllegalArgumentException("Password must be at least 8 characters.");
+            throw new IllegalArgumentException(messageUtil.get("user.password.minimum"));
         }
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new DuplicateEntryException("Username already exists: " + request.getUsername());
+            throw new DuplicateEntryException(messageUtil.get("user.duplicate.username", request.getUsername()));
         }
 
         User user = new User();
@@ -65,20 +67,20 @@ public class UserService {
     // GET BY ID
     public UserResponseDTO getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(messageUtil.get("user.not.found", id)));
         return mapToResponseDTO(user);
     }
 
     // SEARCH BY USERNAME
     public List<UserResponseDTO> searchByUsername(String username) {
         if (username == null || username.trim().isEmpty()) {
-            throw new IllegalArgumentException("Username search term is required.");
+            throw new IllegalArgumentException(messageUtil.get("user.username.search.required"));
         }
 
         List<User> users = userRepository.findByUsernameContainingIgnoreCase(username);
 
         if (users.isEmpty()) {
-            throw new ResourceNotFoundException("No users found with username: " + username);
+            throw new ResourceNotFoundException(messageUtil.get("user.username.not.found", username));
         }
 
         List<UserResponseDTO> result = new ArrayList<>();
@@ -91,7 +93,7 @@ public class UserService {
     // FILTER BY ROLE
     public List<UserResponseDTO> filterByRole(String role) {
         if (role == null || role.trim().isEmpty()) {
-            throw new IllegalArgumentException("Role is required.");
+            throw new IllegalArgumentException(messageUtil.get("user.role.required"));
         }
         try {
             User.Role userRole = User.Role.valueOf(role.toUpperCase());
@@ -102,7 +104,7 @@ public class UserService {
             }
             return result;
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid role: " + role + ". Must be ADMIN or USER.");
+            throw new IllegalArgumentException(messageUtil.get("user.role.invalid", role));
         }
     }
 
@@ -116,7 +118,7 @@ public class UserService {
             try {
                 userRole = User.Role.valueOf(role.toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid role: " + role + ". Must be ADMIN or USER.");
+                throw new IllegalArgumentException(messageUtil.get("user.role.invalid", role));
             }
         }
 
@@ -139,7 +141,7 @@ public class UserService {
     // UPDATE
     public UserResponseDTO updateUser(Long id, UserRequestDTO request) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(messageUtil.get("user.not.found", id)));
 
         if (request.getFirstName() != null && !request.getFirstName().trim().isEmpty()) {
             ValidationUtil.validateName(request.getFirstName(), "First name");
@@ -154,14 +156,14 @@ public class UserService {
         if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
             ValidationUtil.validateUsername(request.getUsername());
             if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-                throw new DuplicateEntryException("Username already exists: " + request.getUsername());
+               throw new DuplicateEntryException(messageUtil.get("user.duplicate.username", request.getUsername()));
             }
             user.setUsername(request.getUsername());
         }
 
         if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
             if (request.getPassword().length() < 8) {
-                throw new IllegalArgumentException("Password must be at least 8 characters.");
+                throw new IllegalArgumentException(messageUtil.get("user.password.minimum"));
             }
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
@@ -176,7 +178,7 @@ public class UserService {
     // DELETE
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(messageUtil.get("user.not.found", id)));
         // Soft delete — deactivate instead of removing from DB
         user.setActive(false);
         userRepository.save(user);

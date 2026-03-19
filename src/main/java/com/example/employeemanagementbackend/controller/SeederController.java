@@ -7,14 +7,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/dev")
+@RequestMapping("${api.dev.base}")
 @RequiredArgsConstructor
 @Profile("dev")
 public class SeederController {
 
     private final EmployeeManagementSeeder seeder;
 
-    @PostMapping("/seed")
+    @PostMapping("${api.dev.seed}")
     public ResponseEntity<String> seed() {
         return ResponseEntity.ok(seeder.reseedDatabase());
     }

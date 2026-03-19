@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/employees")
+@RequestMapping("${api.employees.base}")
 @RequiredArgsConstructor
 public class EmployeeController {
 
@@ -33,25 +33,25 @@ public class EmployeeController {
     }
 
     // GET BY ID
-    @GetMapping("/{id}")
+    @GetMapping("${api.employees.get.by.id}")
     public ResponseEntity<EmployeeResponseDTO> getEmployeeById(@PathVariable Long id) {
         return ResponseEntity.ok(employeeService.getById(id));
     }
 
     // GET BY EMPLOYEE ID
-    @GetMapping("/employee-id/{employeeId}")
+    @GetMapping("${api.employees.get.by.employee.id}")
     public ResponseEntity<EmployeeResponseDTO> getByEmployeeId(@PathVariable Long employeeId) {
         return ResponseEntity.ok(employeeService.getByEmployeeId(employeeId));
     }
 
     // SEARCH BY NAME
-    @GetMapping("/search")
+    @GetMapping("${api.employees.search}")
     public ResponseEntity<List<EmployeeResponseDTO>> searchByName(@RequestParam String name) {
         return ResponseEntity.ok(employeeService.searchByName(name));
     }
 
     // COMBINED SEARCH + FILTER
-    @GetMapping("/search-filter")
+    @GetMapping("${api.employees.search.filter}")
     public ResponseEntity<Page<EmployeeResponseDTO>> searchAndFilter(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Long departmentId,
@@ -65,27 +65,27 @@ public class EmployeeController {
     }
 
     // UPDATE
-    @PutMapping("/{id}")
+    @PutMapping("${api.employees.update}")
     public ResponseEntity<EmployeeResponseDTO> updateEmployee(@PathVariable Long id,
                                                               @RequestBody EmployeeRequestDTO request) {
         return ResponseEntity.ok(employeeService.update(id, request));
     }
 
     // DELETE
-    @DeleteMapping("/{id}")
+    @DeleteMapping("${api.employees.delete}")
     public ResponseEntity<String> deleteEmployee(@PathVariable Long id) {
         employeeService.delete(id);
         return ResponseEntity.ok("Employee deleted successfully.");
     }
 
-    @PatchMapping("/{id}/activate")
+    @PatchMapping("${api.employees.activate}")
     public ResponseEntity<EmployeeResponseDTO> activateEmployee(@PathVariable Long id) {
         return ResponseEntity.ok(employeeService.activate(id));
     }
 
     // ───── Reports (Paginated) ─────
 
-    @GetMapping("/report/department/{departmentId}/paged")
+    @GetMapping("${api.employees.report.department}")
     public ResponseEntity<Page<EmployeeResponseDTO>> getByDepartmentPaged(
             @PathVariable Long departmentId,
             @RequestParam(required = false) Boolean active,
@@ -95,7 +95,7 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.getByDepartmentPaged(departmentId, active, page, size));
     }
 
-    @GetMapping("/report/age/paged")
+    @GetMapping("${api.employees.report.age}")
     public ResponseEntity<Page<EmployeeResponseDTO>> getAllOrderedByAgePaged(
             @RequestParam(required = false) Boolean active,
             @RequestParam(required = false) Integer minAge,
@@ -109,7 +109,7 @@ public class EmployeeController {
 
     // ───── Calculations ─────
 
-    @GetMapping("/stats/average-salary")
+    @GetMapping("${api.employees.stats.salary}")
     public ResponseEntity<BigDecimal> getAverageSalary(
             @RequestParam(required = false) Long departmentId,
             @RequestParam(required = false) Integer minAge,
@@ -117,7 +117,7 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.getAverageSalary(departmentId, minAge, maxAge));
     }
 
-    @GetMapping("/stats/average-age")
+    @GetMapping("${api.employees.stats.age}")
     public ResponseEntity<Double> getAverageAge(
             @RequestParam(required = false) Long departmentId,
             @RequestParam(required = false) Integer minAge,
