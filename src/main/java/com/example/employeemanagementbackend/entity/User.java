@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "users")
+@Table(name = "user")
 public class User extends Person {
 
     @Id
@@ -30,6 +30,9 @@ public class User extends Person {
         ADMIN,
         USER
     }
+
+    @Column(name = "is_active", nullable = false)
+    private boolean active = true;
 
     // Polymorphism — User identifies by username
     @Override

@@ -22,5 +22,4 @@ public class EmployeeResponseDTO {
     private String departmentName;
     private BigDecimal salary;
     private Boolean active;
-    private LocalDateTime createdAt;
 }
