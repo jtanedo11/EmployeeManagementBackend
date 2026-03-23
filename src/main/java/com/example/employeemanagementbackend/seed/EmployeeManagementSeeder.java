@@ -50,14 +50,22 @@ public class EmployeeManagementSeeder {
 
         // ───── USERS ─────
         User admin = new User();
-        admin.setFirstName("Admin");
-        admin.setLastName("User");
+        admin.setFirstName("Test");
+        admin.setLastName("Admin");
         admin.setUsername("admin");
         admin.setPassword(passwordEncoder.encode("password123"));
         admin.setRole(User.Role.ADMIN);
         admin.setActive(true);
 
-        userRepository.saveAll(List.of(admin));
+        User user = new User();
+        user.setFirstName("Test");
+        user.setLastName("User");
+        user.setUsername("user");
+        user.setPassword(passwordEncoder.encode("password123"));
+        user.setRole(User.Role.USER);
+        user.setActive(true);
+
+        userRepository.saveAll(List.of(admin, user));
 
         // ───── DEPARTMENTS ─────
         Department engineering = new Department();
@@ -152,7 +160,7 @@ public class EmployeeManagementSeeder {
                 emp41, emp42, emp43, emp44, emp45, emp46, emp47, emp48, emp49, emp50
         ));
 
-        return "Database reseeded successfully — 1 user, 5 departments, 50 employees created.";
+        return "Database reseeded successfully — 2 users, 5 departments, 50 employees created.";
     }
 
     private Employee createEmployee(String firstName, String lastName,

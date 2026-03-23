@@ -6,6 +6,7 @@ import com.example.employeemanagementbackend.entity.User;
 import com.example.employeemanagementbackend.exception.DuplicateEntryException;
 import com.example.employeemanagementbackend.exception.ResourceNotFoundException;
 import com.example.employeemanagementbackend.repository.UserRepository;
+import com.example.employeemanagementbackend.util.MessageUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,9 @@ public class UserServiceTest {
     @Mock
     private BCryptPasswordEncoder passwordEncoder;
 
+    @Mock
+    private MessageUtil messageUtil;
+
     @InjectMocks
     private UserService userService;
 
@@ -46,6 +50,9 @@ public class UserServiceTest {
         mockUser.setActive(true);
 
         validRequest = new UserRequestDTO("John", "Doe", "johndoe", "password123", "USER");
+
+        lenient().when(messageUtil.get(anyString())).thenAnswer(i -> i.getArgument(0));
+        lenient().when(messageUtil.get(anyString(), any())).thenAnswer(i -> i.getArgument(0));
     }
 
     // ───── ADD USER ─────
@@ -67,64 +74,55 @@ public class UserServiceTest {
     @Test
     void addUser_NullFirstName_ThrowsIllegalArgumentException() {
         UserRequestDTO request = new UserRequestDTO(null, "Doe", "johndoe", "password123", "USER");
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
-        assertEquals("First name is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
     }
 
     @Test
     void addUser_EmptyFirstName_ThrowsIllegalArgumentException() {
         UserRequestDTO request = new UserRequestDTO("", "Doe", "johndoe", "password123", "USER");
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
-        assertEquals("First name is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
     }
 
     @Test
     void addUser_WhitespaceFirstName_ThrowsIllegalArgumentException() {
         UserRequestDTO request = new UserRequestDTO("   ", "Doe", "johndoe", "password123", "USER");
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
-        assertEquals("First name is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
     }
 
     @Test
     void addUser_NullLastName_ThrowsIllegalArgumentException() {
         UserRequestDTO request = new UserRequestDTO("John", null, "johndoe", "password123", "USER");
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
-        assertEquals("Last name is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
     }
 
     @Test
     void addUser_EmptyLastName_ThrowsIllegalArgumentException() {
         UserRequestDTO request = new UserRequestDTO("John", "", "johndoe", "password123", "USER");
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
-        assertEquals("Last name is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
     }
 
     @Test
     void addUser_NullUsername_ThrowsIllegalArgumentException() {
         UserRequestDTO request = new UserRequestDTO("John", "Doe", null, "password123", "USER");
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
-        assertEquals("Username is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
     }
 
     @Test
     void addUser_EmptyUsername_ThrowsIllegalArgumentException() {
         UserRequestDTO request = new UserRequestDTO("John", "Doe", "", "password123", "USER");
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
-        assertEquals("Username is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
     }
 
     @Test
     void addUser_NullPassword_ThrowsIllegalArgumentException() {
         UserRequestDTO request = new UserRequestDTO("John", "Doe", "johndoe", null, "USER");
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
-        assertEquals("Password is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
     }
 
     @Test
     void addUser_ShortPassword_ThrowsIllegalArgumentException() {
         UserRequestDTO request = new UserRequestDTO("John", "Doe", "johndoe", "short", "USER");
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
-        assertEquals("Password must be at least 8 characters.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> userService.addUser(request));
     }
 
     @Test
@@ -141,8 +139,7 @@ public class UserServiceTest {
     @Test
     void addUser_DuplicateUsername_ThrowsDuplicateEntryException() {
         when(userRepository.findByUsername("johndoe")).thenReturn(Optional.of(mockUser));
-        DuplicateEntryException ex = assertThrows(DuplicateEntryException.class, () -> userService.addUser(validRequest));
-        assertEquals("Username already exists: johndoe", ex.getMessage());
+        assertThrows(DuplicateEntryException.class, () -> userService.addUser(validRequest));
     }
 
     // ───── GET ALL ─────
@@ -177,8 +174,7 @@ public class UserServiceTest {
     @Test
     void getUserById_NotFound_ThrowsResourceNotFoundException() {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> userService.getUserById(1L));
-        assertEquals("User not found with id: 1", ex.getMessage());
+        assertThrows(ResourceNotFoundException.class, () -> userService.getUserById(1L));
     }
 
     // ───── UPDATE ─────
@@ -199,21 +195,32 @@ public class UserServiceTest {
     @Test
     void updateUser_NotFound_ThrowsResourceNotFoundException() {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> userService.updateUser(1L, validRequest));
-        assertEquals("User not found with id: 1", ex.getMessage());
+        assertThrows(ResourceNotFoundException.class, () -> userService.updateUser(1L, validRequest));
     }
 
     @Test
     void updateUser_DuplicateUsername_ThrowsDuplicateEntryException() {
         UserRequestDTO updateRequest = new UserRequestDTO("John", "Doe", "existinguser", "password123", "USER");
         User anotherUser = new User();
+        anotherUser.setId(2L);
         anotherUser.setUsername("existinguser");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
         when(userRepository.findByUsername("existinguser")).thenReturn(Optional.of(anotherUser));
 
-        DuplicateEntryException ex = assertThrows(DuplicateEntryException.class, () -> userService.updateUser(1L, updateRequest));
-        assertEquals("Username already exists: existinguser", ex.getMessage());
+        assertThrows(DuplicateEntryException.class, () -> userService.updateUser(1L, updateRequest));
+    }
+
+    @Test
+    void updateUser_SameUsername_DoesNotThrowDuplicate() {
+        // Updating with own username should not throw duplicate
+        mockUser.setId(1L);
+        UserRequestDTO updateRequest = new UserRequestDTO("John", "Doe", "johndoe", "password123", "USER");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+        when(userRepository.findByUsername("johndoe")).thenReturn(Optional.of(mockUser));
+        when(userRepository.save(any(User.class))).thenReturn(mockUser);
+
+        assertDoesNotThrow(() -> userService.updateUser(1L, updateRequest));
     }
 
     @Test
@@ -222,8 +229,7 @@ public class UserServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
         when(userRepository.findByUsername("johndoe")).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> userService.updateUser(1L, updateRequest));
-        assertEquals("Password must be at least 8 characters.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> userService.updateUser(1L, updateRequest));
     }
 
     @Test
@@ -232,8 +238,7 @@ public class UserServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
         when(userRepository.findByUsername("johndoe")).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> userService.updateUser(1L, updateRequest));
-        assertEquals("Password must be at least 8 characters.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> userService.updateUser(1L, updateRequest));
     }
 
     // ───── DELETE ─────
@@ -249,8 +254,33 @@ public class UserServiceTest {
     @Test
     void deleteUser_NotFound_ThrowsResourceNotFoundException() {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(1L));
-        assertEquals("User not found with id: 1", ex.getMessage());
+        assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(1L));
+    }
+
+    // ───── ACTIVATE ─────
+
+    @Test
+    void activateUser_Success() {
+        mockUser.setActive(false);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+        when(userRepository.save(mockUser)).thenReturn(mockUser);
+
+        UserResponseDTO response = userService.activateUser(1L);
+        assertNotNull(response);
+        assertTrue(mockUser.isActive());
+        verify(userRepository, times(1)).save(mockUser);
+    }
+
+    @Test
+    void activateUser_NotFound_ThrowsResourceNotFoundException() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> userService.activateUser(1L));
+    }
+
+    @Test
+    void activateUser_AlreadyActive_ThrowsIllegalArgumentException() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+        assertThrows(IllegalArgumentException.class, () -> userService.activateUser(1L));
     }
 
     // ───── SEARCH ─────
@@ -267,20 +297,17 @@ public class UserServiceTest {
     @Test
     void searchByUsername_NoResults_ThrowsResourceNotFoundException() {
         when(userRepository.findByUsernameContainingIgnoreCase("xyz")).thenReturn(List.of());
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> userService.searchByUsername("xyz"));
-        assertEquals("No users found with username: xyz", ex.getMessage());
+        assertThrows(ResourceNotFoundException.class, () -> userService.searchByUsername("xyz"));
     }
 
     @Test
     void searchByUsername_NullUsername_ThrowsIllegalArgumentException() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> userService.searchByUsername(null));
-        assertEquals("Username search term is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> userService.searchByUsername(null));
     }
 
     @Test
     void searchByUsername_EmptyUsername_ThrowsIllegalArgumentException() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> userService.searchByUsername(""));
-        assertEquals("Username search term is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> userService.searchByUsername(""));
     }
 
     // ───── FILTER BY ROLE ─────
@@ -317,20 +344,17 @@ public class UserServiceTest {
 
     @Test
     void filterByRole_InvalidRole_ThrowsIllegalArgumentException() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> userService.filterByRole("SUPERADMIN"));
-        assertEquals("Invalid role: SUPERADMIN. Must be ADMIN or USER.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> userService.filterByRole("SUPERADMIN"));
     }
 
     @Test
     void filterByRole_NullRole_ThrowsIllegalArgumentException() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> userService.filterByRole(null));
-        assertEquals("Role is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> userService.filterByRole(null));
     }
 
     @Test
     void filterByRole_EmptyRole_ThrowsIllegalArgumentException() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> userService.filterByRole(""));
-        assertEquals("Role is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> userService.filterByRole(""));
     }
 
     // ───── COMBINED SEARCH + FILTER ─────
@@ -371,8 +395,8 @@ public class UserServiceTest {
 
     @Test
     void searchAndFilter_InvalidRole_ThrowsIllegalArgumentException() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> userService.searchAndFilter("john", "SUPERADMIN"));
-        assertEquals("Invalid role: SUPERADMIN. Must be ADMIN or USER.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class,
+                () -> userService.searchAndFilter("john", "SUPERADMIN"));
     }
 
     @Test

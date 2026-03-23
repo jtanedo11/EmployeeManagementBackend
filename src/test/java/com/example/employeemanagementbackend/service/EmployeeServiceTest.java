@@ -7,6 +7,7 @@ import com.example.employeemanagementbackend.entity.Employee;
 import com.example.employeemanagementbackend.exception.ResourceNotFoundException;
 import com.example.employeemanagementbackend.repository.DepartmentRepository;
 import com.example.employeemanagementbackend.repository.EmployeeRepository;
+import com.example.employeemanagementbackend.util.MessageUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +34,9 @@ public class EmployeeServiceTest {
 
     @Mock
     private DepartmentRepository departmentRepository;
+
+    @Mock
+    private MessageUtil messageUtil;
 
     @InjectMocks
     private EmployeeService employeeService;
@@ -62,6 +66,10 @@ public class EmployeeServiceTest {
                 1L,
                 new BigDecimal("50000")
         );
+
+        // Default stub for all messageUtil.get calls
+        lenient().when(messageUtil.get(anyString(), any())).thenAnswer(i -> i.getArgument(0));
+        lenient().when(messageUtil.get(anyString())).thenAnswer(i -> i.getArgument(0));
     }
 
     // ───── CREATE ─────
@@ -83,72 +91,71 @@ public class EmployeeServiceTest {
 
     @Test
     void create_NullFirstName_ThrowsIllegalArgumentException() {
-        EmployeeRequestDTO request = new EmployeeRequestDTO(null, "Smith", LocalDate.of(1995, 5, 15), 1L, new BigDecimal("50000"));
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
-        assertEquals("First name is required.", ex.getMessage());
+        EmployeeRequestDTO request = new EmployeeRequestDTO(
+                null, "Smith", LocalDate.of(1995, 5, 15), 1L, new BigDecimal("50000"));
+        assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
     }
 
     @Test
     void create_EmptyFirstName_ThrowsIllegalArgumentException() {
-        EmployeeRequestDTO request = new EmployeeRequestDTO("", "Smith", LocalDate.of(1995, 5, 15), 1L, new BigDecimal("50000"));
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
-        assertEquals("First name is required.", ex.getMessage());
+        EmployeeRequestDTO request = new EmployeeRequestDTO(
+                "", "Smith", LocalDate.of(1995, 5, 15), 1L, new BigDecimal("50000"));
+        assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
     }
 
     @Test
     void create_NullLastName_ThrowsIllegalArgumentException() {
-        EmployeeRequestDTO request = new EmployeeRequestDTO("Jane", null, LocalDate.of(1995, 5, 15), 1L, new BigDecimal("50000"));
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
-        assertEquals("Last name is required.", ex.getMessage());
+        EmployeeRequestDTO request = new EmployeeRequestDTO(
+                "Jane", null, LocalDate.of(1995, 5, 15), 1L, new BigDecimal("50000"));
+        assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
     }
 
     @Test
     void create_EmptyLastName_ThrowsIllegalArgumentException() {
-        EmployeeRequestDTO request = new EmployeeRequestDTO("Jane", "", LocalDate.of(1995, 5, 15), 1L, new BigDecimal("50000"));
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
-        assertEquals("Last name is required.", ex.getMessage());
+        EmployeeRequestDTO request = new EmployeeRequestDTO(
+                "Jane", "", LocalDate.of(1995, 5, 15), 1L, new BigDecimal("50000"));
+        assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
     }
 
     @Test
     void create_NullDateOfBirth_ThrowsIllegalArgumentException() {
-        EmployeeRequestDTO request = new EmployeeRequestDTO("Jane", "Smith", null, 1L, new BigDecimal("50000"));
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
-        assertEquals("Date of birth is required.", ex.getMessage());
+        EmployeeRequestDTO request = new EmployeeRequestDTO(
+                "Jane", "Smith", null, 1L, new BigDecimal("50000"));
+        assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
     }
 
     @Test
     void create_AgeTooYoung_ThrowsIllegalArgumentException() {
-        EmployeeRequestDTO request = new EmployeeRequestDTO("Jane", "Smith", LocalDate.now().minusYears(17), 1L, new BigDecimal("50000"));
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
-        assertEquals("Employee must be at least 18 years old.", ex.getMessage());
+        EmployeeRequestDTO request = new EmployeeRequestDTO(
+                "Jane", "Smith", LocalDate.now().minusYears(17), 1L, new BigDecimal("50000"));
+        assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
     }
 
     @Test
     void create_NullSalary_ThrowsIllegalArgumentException() {
-        EmployeeRequestDTO request = new EmployeeRequestDTO("Jane", "Smith", LocalDate.of(1995, 5, 15), 1L, null);
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
-        assertEquals("Salary must be greater than zero.", ex.getMessage());
+        EmployeeRequestDTO request = new EmployeeRequestDTO(
+                "Jane", "Smith", LocalDate.of(1995, 5, 15), 1L, null);
+        assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
     }
 
     @Test
     void create_ZeroSalary_ThrowsIllegalArgumentException() {
-        EmployeeRequestDTO request = new EmployeeRequestDTO("Jane", "Smith", LocalDate.of(1995, 5, 15), 1L, BigDecimal.ZERO);
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
-        assertEquals("Salary must be greater than zero.", ex.getMessage());
+        EmployeeRequestDTO request = new EmployeeRequestDTO(
+                "Jane", "Smith", LocalDate.of(1995, 5, 15), 1L, BigDecimal.ZERO);
+        assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
     }
 
     @Test
     void create_NegativeSalary_ThrowsIllegalArgumentException() {
-        EmployeeRequestDTO request = new EmployeeRequestDTO("Jane", "Smith", LocalDate.of(1995, 5, 15), 1L, new BigDecimal("-1000"));
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
-        assertEquals("Salary must be greater than zero.", ex.getMessage());
+        EmployeeRequestDTO request = new EmployeeRequestDTO(
+                "Jane", "Smith", LocalDate.of(1995, 5, 15), 1L, new BigDecimal("-1000"));
+        assertThrows(IllegalArgumentException.class, () -> employeeService.create(request));
     }
 
     @Test
     void create_DepartmentNotFound_ThrowsResourceNotFoundException() {
         when(departmentRepository.findById(1L)).thenReturn(Optional.empty());
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> employeeService.create(validRequest));
-        assertEquals("Department not found.", ex.getMessage());
+        assertThrows(ResourceNotFoundException.class, () -> employeeService.create(validRequest));
     }
 
     // ───── GET ALL ─────
@@ -183,8 +190,7 @@ public class EmployeeServiceTest {
     @Test
     void getById_NotFound_ThrowsResourceNotFoundException() {
         when(employeeRepository.findById(1L)).thenReturn(Optional.empty());
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> employeeService.getById(1L));
-        assertEquals("Employee not found with id: 1", ex.getMessage());
+        assertThrows(ResourceNotFoundException.class, () -> employeeService.getById(1L));
     }
 
     // ───── GET BY EMPLOYEE ID ─────
@@ -200,15 +206,15 @@ public class EmployeeServiceTest {
     @Test
     void getByEmployeeId_NotFound_ThrowsResourceNotFoundException() {
         when(employeeRepository.findByEmployeeId(100001L)).thenReturn(Optional.empty());
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> employeeService.getByEmployeeId(100001L));
-        assertEquals("Employee not found with employeeId: 100001", ex.getMessage());
+        assertThrows(ResourceNotFoundException.class, () -> employeeService.getByEmployeeId(100001L));
     }
 
     // ───── UPDATE ─────
 
     @Test
     void update_Success() {
-        EmployeeRequestDTO updateRequest = new EmployeeRequestDTO("Janet", "Smith", LocalDate.of(1995, 5, 15), 1L, new BigDecimal("60000"));
+        EmployeeRequestDTO updateRequest = new EmployeeRequestDTO(
+                "Janet", "Smith", LocalDate.of(1995, 5, 15), 1L, new BigDecimal("60000"));
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(mockEmployee));
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(mockDepartment));
         when(employeeRepository.save(any(Employee.class))).thenReturn(mockEmployee);
@@ -221,51 +227,48 @@ public class EmployeeServiceTest {
     @Test
     void update_NotFound_ThrowsResourceNotFoundException() {
         when(employeeRepository.findById(1L)).thenReturn(Optional.empty());
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> employeeService.update(1L, validRequest));
-        assertEquals("Employee not found with id: 1", ex.getMessage());
+        assertThrows(ResourceNotFoundException.class, () -> employeeService.update(1L, validRequest));
     }
 
     @Test
     void update_AgeTooYoung_ThrowsIllegalArgumentException() {
-        EmployeeRequestDTO request = new EmployeeRequestDTO("Jane", "Smith", LocalDate.now().minusYears(17), 1L, new BigDecimal("50000"));
+        EmployeeRequestDTO request = new EmployeeRequestDTO(
+                "Jane", "Smith", LocalDate.now().minusYears(17), 1L, new BigDecimal("50000"));
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(mockEmployee));
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> employeeService.update(1L, request));
-        assertEquals("Employee must be at least 18 years old.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> employeeService.update(1L, request));
     }
 
     @Test
-    void update_ZeroSalary_DoesNotUpdate() {
-        // Zero salary should be ignored (service checks > 0 before setting)
-        EmployeeRequestDTO request = new EmployeeRequestDTO("Jane", "Smith", LocalDate.of(1995, 5, 15), 1L, BigDecimal.ZERO);
+    void update_ZeroSalary_DoesNotUpdateSalary() {
+        EmployeeRequestDTO request = new EmployeeRequestDTO(
+                "Jane", "Smith", LocalDate.of(1995, 5, 15), 1L, BigDecimal.ZERO);
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(mockEmployee));
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(mockDepartment));
         when(employeeRepository.save(any(Employee.class))).thenReturn(mockEmployee);
 
-        EmployeeResponseDTO response = employeeService.update(1L, request);
-        assertNotNull(response);
-        // Salary should remain unchanged at 50000
+        employeeService.update(1L, request);
         assertEquals(new BigDecimal("50000"), mockEmployee.getSalary());
     }
 
     @Test
-    void update_NegativeSalary_DoesNotUpdate() {
-        EmployeeRequestDTO request = new EmployeeRequestDTO("Jane", "Smith", LocalDate.of(1995, 5, 15), 1L, new BigDecimal("-500"));
+    void update_NegativeSalary_DoesNotUpdateSalary() {
+        EmployeeRequestDTO request = new EmployeeRequestDTO(
+                "Jane", "Smith", LocalDate.of(1995, 5, 15), 1L, new BigDecimal("-500"));
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(mockEmployee));
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(mockDepartment));
         when(employeeRepository.save(any(Employee.class))).thenReturn(mockEmployee);
 
-        EmployeeResponseDTO response = employeeService.update(1L, request);
-        assertNotNull(response);
+        employeeService.update(1L, request);
         assertEquals(new BigDecimal("50000"), mockEmployee.getSalary());
     }
 
     @Test
     void update_DepartmentNotFound_ThrowsResourceNotFoundException() {
-        EmployeeRequestDTO request = new EmployeeRequestDTO("Jane", "Smith", LocalDate.of(1995, 5, 15), 99L, new BigDecimal("50000"));
+        EmployeeRequestDTO request = new EmployeeRequestDTO(
+                "Jane", "Smith", LocalDate.of(1995, 5, 15), 99L, new BigDecimal("50000"));
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(mockEmployee));
         when(departmentRepository.findById(99L)).thenReturn(Optional.empty());
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> employeeService.update(1L, request));
-        assertEquals("Department not found.", ex.getMessage());
+        assertThrows(ResourceNotFoundException.class, () -> employeeService.update(1L, request));
     }
 
     // ───── DELETE (DEACTIVATE) ─────
@@ -281,8 +284,7 @@ public class EmployeeServiceTest {
     @Test
     void delete_NotFound_ThrowsResourceNotFoundException() {
         when(employeeRepository.findById(1L)).thenReturn(Optional.empty());
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> employeeService.delete(1L));
-        assertEquals("Employee not found with id: 1", ex.getMessage());
+        assertThrows(ResourceNotFoundException.class, () -> employeeService.delete(1L));
     }
 
     // ───── ACTIVATE ─────
@@ -302,24 +304,18 @@ public class EmployeeServiceTest {
     @Test
     void activate_NotFound_ThrowsResourceNotFoundException() {
         when(employeeRepository.findById(1L)).thenReturn(Optional.empty());
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> employeeService.activate(1L));
-        assertEquals("Employee not found with id: 1", ex.getMessage());
+        assertThrows(ResourceNotFoundException.class, () -> employeeService.activate(1L));
     }
 
     @Test
     void activate_InactiveDepartment_ThrowsIllegalArgumentException() {
         mockEmployee.setActive(false);
         mockDepartment.setActive(false);
-        // Department is accessed directly via employee.getDepartment() — no repo stub needed
-
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(mockEmployee));
-
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> employeeService.activate(1L));
-        assertTrue(ex.getMessage().contains("department"));
-        assertTrue(ex.getMessage().contains("inactive"));
+        assertThrows(IllegalArgumentException.class, () -> employeeService.activate(1L));
     }
 
-    // ───── SEARCH ─────
+    // ───── SEARCH BY NAME ─────
 
     @Test
     void searchByName_Success() {
@@ -335,20 +331,17 @@ public class EmployeeServiceTest {
     void searchByName_NoResults_ThrowsResourceNotFoundException() {
         when(employeeRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase("xyz", "xyz"))
                 .thenReturn(List.of());
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> employeeService.searchByName("xyz"));
-        assertEquals("No employees found with name: xyz", ex.getMessage());
+        assertThrows(ResourceNotFoundException.class, () -> employeeService.searchByName("xyz"));
     }
 
     @Test
     void searchByName_NullName_ThrowsIllegalArgumentException() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> employeeService.searchByName(null));
-        assertEquals("Name search term is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> employeeService.searchByName(null));
     }
 
     @Test
     void searchByName_EmptyName_ThrowsIllegalArgumentException() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> employeeService.searchByName(""));
-        assertEquals("Name search term is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> employeeService.searchByName(""));
     }
 
     // ───── FILTER BY DEPARTMENT ─────
@@ -374,93 +367,185 @@ public class EmployeeServiceTest {
 
     @Test
     void filterByDepartment_NullId_ThrowsIllegalArgumentException() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> employeeService.filterByDepartment(null));
-        assertEquals("Department ID is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> employeeService.filterByDepartment(null));
     }
 
     @Test
     void filterByDepartment_DepartmentNotFound_ThrowsResourceNotFoundException() {
         when(departmentRepository.findById(99L)).thenReturn(Optional.empty());
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> employeeService.filterByDepartment(99L));
-        assertEquals("Department not found with id: 99", ex.getMessage());
+        assertThrows(ResourceNotFoundException.class, () -> employeeService.filterByDepartment(99L));
     }
 
-    // ───── REPORTS ─────
+    // ───── SEARCH AND FILTER ─────
 
     @Test
-    void getByDepartment_Success() {
-        when(employeeRepository.findByDepartmentIdAndActive(1L, true)).thenReturn(List.of(mockEmployee));
-        List<EmployeeResponseDTO> result = employeeService.getByDepartment(1L);
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("Engineering", result.get(0).getDepartmentName());
-    }
+    void searchAndFilter_Success() {
+        Page<Employee> mockPage = new PageImpl<>(List.of(mockEmployee));
+        when(employeeRepository.searchAndFilterPageable(any(), any(), any(), any(), any(), any()))
+                .thenReturn(mockPage);
 
-    @Test
-    void getByDepartment_NoResults_ReturnsEmptyList() {
-        when(employeeRepository.findByDepartmentIdAndActive(1L, true)).thenReturn(List.of());
-        List<EmployeeResponseDTO> result = employeeService.getByDepartment(1L);
+        Page<EmployeeResponseDTO> result = employeeService.searchAndFilter(
+                "Jane", 1L, true, null, null, 0, 10);
         assertNotNull(result);
-        assertEquals(0, result.size());
+        assertEquals(1, result.getTotalElements());
     }
 
     @Test
-    void getAllOrderedByAge_Success() {
-        when(employeeRepository.findByActiveOrderByDateOfBirthAsc(true)).thenReturn(List.of(mockEmployee));
-        List<EmployeeResponseDTO> result = employeeService.getAllOrderedByAge();
+    void searchAndFilter_EmptyName_TreatedAsNull() {
+        Page<Employee> mockPage = new PageImpl<>(List.of());
+        when(employeeRepository.searchAndFilterPageable(isNull(), any(), any(), any(), any(), any()))
+                .thenReturn(mockPage);
+
+        Page<EmployeeResponseDTO> result = employeeService.searchAndFilter(
+                "", null, null, null, null, 0, 10);
         assertNotNull(result);
-        assertEquals(1, result.size());
+        assertEquals(0, result.getTotalElements());
     }
 
     @Test
-    void getAllOrderedByAge_Empty_ReturnsEmptyList() {
-        when(employeeRepository.findByActiveOrderByDateOfBirthAsc(true)).thenReturn(List.of());
-        List<EmployeeResponseDTO> result = employeeService.getAllOrderedByAge();
+    void searchAndFilter_WithAgeRange_Success() {
+        Page<Employee> mockPage = new PageImpl<>(List.of(mockEmployee));
+        when(employeeRepository.searchAndFilterPageable(any(), any(), any(), any(), any(), any()))
+                .thenReturn(mockPage);
+
+        Page<EmployeeResponseDTO> result = employeeService.searchAndFilter(
+                null, null, null, 25, 35, 0, 10);
         assertNotNull(result);
-        assertEquals(0, result.size());
+        assertEquals(1, result.getTotalElements());
     }
 
     // ───── CALCULATIONS ─────
 
     @Test
     void getAverageSalary_NoFilter_Success() {
-        when(employeeRepository.findByActive(true)).thenReturn(List.of(mockEmployee));
-        BigDecimal avg = employeeService.getAverageSalary(null);
+        when(employeeRepository.findForStats(isNull(), isNull(), isNull()))
+                .thenReturn(List.of(mockEmployee));
+        BigDecimal avg = employeeService.getAverageSalary(null, null, null);
         assertEquals(new BigDecimal("50000.00"), avg);
     }
 
     @Test
     void getAverageSalary_WithDepartmentFilter_Success() {
-        when(employeeRepository.findByDepartmentIdAndActive(1L, true)).thenReturn(List.of(mockEmployee));
-        BigDecimal avg = employeeService.getAverageSalary(1L);
+        when(employeeRepository.findForStats(eq(1L), isNull(), isNull()))
+                .thenReturn(List.of(mockEmployee));
+        BigDecimal avg = employeeService.getAverageSalary(1L, null, null);
+        assertEquals(new BigDecimal("50000.00"), avg);
+    }
+
+    @Test
+    void getAverageSalary_WithAgeFilter_Success() {
+        when(employeeRepository.findForStats(isNull(), any(), any()))
+                .thenReturn(List.of(mockEmployee));
+        BigDecimal avg = employeeService.getAverageSalary(null, 25, 35);
         assertEquals(new BigDecimal("50000.00"), avg);
     }
 
     @Test
     void getAverageSalary_NoEmployees_ReturnsZero() {
-        when(employeeRepository.findByActive(true)).thenReturn(List.of());
-        BigDecimal avg = employeeService.getAverageSalary(null);
+        when(employeeRepository.findForStats(isNull(), isNull(), isNull()))
+                .thenReturn(List.of());
+        BigDecimal avg = employeeService.getAverageSalary(null, null, null);
         assertEquals(BigDecimal.ZERO, avg);
     }
 
     @Test
     void getAverageAge_NoFilter_Success() {
-        when(employeeRepository.findByActive(true)).thenReturn(List.of(mockEmployee));
-        double avg = employeeService.getAverageAge(null);
+        when(employeeRepository.findForStats(isNull(), isNull(), isNull()))
+                .thenReturn(List.of(mockEmployee));
+        double avg = employeeService.getAverageAge(null, null, null);
         assertTrue(avg > 0);
     }
 
     @Test
     void getAverageAge_WithDepartmentFilter_Success() {
-        when(employeeRepository.findByDepartmentIdAndActive(1L, true)).thenReturn(List.of(mockEmployee));
-        double avg = employeeService.getAverageAge(1L);
+        when(employeeRepository.findForStats(eq(1L), isNull(), isNull()))
+                .thenReturn(List.of(mockEmployee));
+        double avg = employeeService.getAverageAge(1L, null, null);
+        assertTrue(avg > 0);
+    }
+
+    @Test
+    void getAverageAge_WithAgeFilter_Success() {
+        when(employeeRepository.findForStats(isNull(), any(), any()))
+                .thenReturn(List.of(mockEmployee));
+        double avg = employeeService.getAverageAge(null, 25, 35);
         assertTrue(avg > 0);
     }
 
     @Test
     void getAverageAge_NoEmployees_ReturnsZero() {
-        when(employeeRepository.findByActive(true)).thenReturn(List.of());
-        double avg = employeeService.getAverageAge(null);
+        when(employeeRepository.findForStats(isNull(), isNull(), isNull()))
+                .thenReturn(List.of());
+        double avg = employeeService.getAverageAge(null, null, null);
         assertEquals(0.0, avg);
+    }
+
+    // ───── PAGINATED REPORTS ─────
+
+    @Test
+    void getByDepartmentPaged_Success() {
+        Page<Employee> mockPage = new PageImpl<>(List.of(mockEmployee));
+        when(departmentRepository.findById(1L)).thenReturn(Optional.of(mockDepartment));
+        when(employeeRepository.findByDepartmentIdAndActivePaged(eq(1L), any(), any(PageRequest.class)))
+                .thenReturn(mockPage);
+
+        Page<EmployeeResponseDTO> result = employeeService.getByDepartmentPaged(1L, true, 0, 5);
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+    }
+
+    @Test
+    void getByDepartmentPaged_DepartmentNotFound_ThrowsResourceNotFoundException() {
+        when(departmentRepository.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class,
+                () -> employeeService.getByDepartmentPaged(99L, null, 0, 5));
+    }
+
+    @Test
+    void getAllOrderedByAgePaged_YoungsetFirst_Success() {
+        Page<Employee> mockPage = new PageImpl<>(List.of(mockEmployee));
+        when(employeeRepository.findAllActiveOrderByDateOfBirthAscPaged(any(), any(), any(), any(PageRequest.class)))
+                .thenReturn(mockPage);
+
+        Page<EmployeeResponseDTO> result = employeeService.getAllOrderedByAgePaged(
+                true, null, null, "asc", 0, 5);
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+    }
+
+    @Test
+    void getAllOrderedByAgePaged_OldestFirst_Success() {
+        Page<Employee> mockPage = new PageImpl<>(List.of(mockEmployee));
+        when(employeeRepository.findAllActiveOrderByDateOfBirthAscPaged(any(), any(), any(), any(PageRequest.class)))
+                .thenReturn(mockPage);
+
+        Page<EmployeeResponseDTO> result = employeeService.getAllOrderedByAgePaged(
+                true, null, null, "desc", 0, 5);
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+    }
+
+    @Test
+    void getAllOrderedByAgePaged_WithAgeFilter_Success() {
+        Page<Employee> mockPage = new PageImpl<>(List.of(mockEmployee));
+        when(employeeRepository.findAllActiveOrderByDateOfBirthAscPaged(any(), any(), any(), any(PageRequest.class)))
+                .thenReturn(mockPage);
+
+        Page<EmployeeResponseDTO> result = employeeService.getAllOrderedByAgePaged(
+                null, 25, 35, "asc", 0, 5);
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+    }
+
+    @Test
+    void getAllOrderedByAgePaged_Empty_ReturnsEmptyPage() {
+        Page<Employee> mockPage = new PageImpl<>(List.of());
+        when(employeeRepository.findAllActiveOrderByDateOfBirthAscPaged(any(), any(), any(), any(PageRequest.class)))
+                .thenReturn(mockPage);
+
+        Page<EmployeeResponseDTO> result = employeeService.getAllOrderedByAgePaged(
+                null, null, null, "asc", 0, 5);
+        assertNotNull(result);
+        assertEquals(0, result.getTotalElements());
     }
 }

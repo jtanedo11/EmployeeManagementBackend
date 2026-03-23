@@ -155,9 +155,16 @@ public class UserService {
 
         if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
             ValidationUtil.validateUsername(request.getUsername());
-            if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-               throw new DuplicateEntryException(messageUtil.get("user.duplicate.username", request.getUsername()));
-            }
+
+            // Check if username exists but exclude the current user
+            userRepository.findByUsername(request.getUsername())
+                    .ifPresent(existingUser -> {
+                        if (!existingUser.getId().equals(id)) {
+                            throw new DuplicateEntryException(
+                                    messageUtil.get("user.duplicate.username", request.getUsername()));
+                        }
+                    });
+
             user.setUsername(request.getUsername());
         }
 
@@ -184,9 +191,25 @@ public class UserService {
         userRepository.save(user);
     }
 
+    // ACTIVATE
+    public UserResponseDTO activateUser(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(messageUtil.get("user.not.found", id)));
+
+        if (user.isActive()) {
+            throw new IllegalArgumentException(messageUtil.get("user.already.active", user.getUsername()));
+        }
+
+        user.setActive(true);
+        return mapToResponseDTO(userRepository.save(user));
+    }
+
     // MAPPER
     private UserResponseDTO mapToResponseDTO(User user) {
         UserResponseDTO response = new UserResponseDTO();
+        response.setId(user.getId());
+        response.setFirstName(user.getFirstName());
+        response.setLastName(user.getLastName());
         response.setUsername(user.getUsername());
         response.setRole(user.getRole().name());
         response.setActive(user.isActive());

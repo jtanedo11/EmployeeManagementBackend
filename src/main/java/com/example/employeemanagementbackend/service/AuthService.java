@@ -3,6 +3,7 @@ package com.example.employeemanagementbackend.service;
 import com.example.employeemanagementbackend.dto.LoginRequestDTO;
 import com.example.employeemanagementbackend.dto.LoginResponseDTO;
 import com.example.employeemanagementbackend.entity.User;
+import com.example.employeemanagementbackend.exception.AccountDeactivatedException;
 import com.example.employeemanagementbackend.exception.ResourceNotFoundException;
 import com.example.employeemanagementbackend.repository.UserRepository;
 import com.example.employeemanagementbackend.security.JwtTokenUtil;
@@ -40,6 +41,10 @@ public class AuthService {
 
         if(!passwordEncoder.matches(request.getPassword(), existingUser.getPassword())) {
             throw new IllegalArgumentException(messageUtil.get("auth.password.incorrect"));
+        }
+
+        if (!existingUser.isActive()) {
+            throw new AccountDeactivatedException(messageUtil.get("auth.account.deactivated"));
         }
 
         String token = jwtTokenUtil.generateToken(existingUser.getUsername());

@@ -1,4 +1,3 @@
-// ResourceNotFoundException.java
 package com.example.employeemanagementbackend.exception;
 
 public class ResourceNotFoundException extends RuntimeException {

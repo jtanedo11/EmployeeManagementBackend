@@ -9,6 +9,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UserResponseDTO {
 
+    private Long id;
+    private String firstName;
+    private String lastName;
     private String username;
     private String role;
     private boolean active;

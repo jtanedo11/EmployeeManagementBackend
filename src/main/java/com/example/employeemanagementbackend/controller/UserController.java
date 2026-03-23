@@ -68,4 +68,10 @@ public class UserController {
         userService.deleteUser(id);
         return ResponseEntity.ok("User deleted successfully.");
     }
+
+    // ACTIVATE
+    @PatchMapping("${api.users.activate}")
+    public ResponseEntity<UserResponseDTO> activateUser(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.activateUser(id));
+    }
 }

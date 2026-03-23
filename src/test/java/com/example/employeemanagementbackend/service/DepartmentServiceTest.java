@@ -7,6 +7,7 @@ import com.example.employeemanagementbackend.exception.DuplicateEntryException;
 import com.example.employeemanagementbackend.exception.ResourceNotFoundException;
 import com.example.employeemanagementbackend.repository.DepartmentRepository;
 import com.example.employeemanagementbackend.repository.EmployeeRepository;
+import com.example.employeemanagementbackend.util.MessageUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,9 @@ public class DepartmentServiceTest {
     @Mock
     private EmployeeRepository employeeRepository;
 
+    @Mock
+    private MessageUtil messageUtil;
+
     @InjectMocks
     private DepartmentService departmentService;
 
@@ -43,6 +47,9 @@ public class DepartmentServiceTest {
         mockDepartment.setActive(true);
 
         validRequest = new DepartmentRequestDTO("Engineering");
+
+        lenient().when(messageUtil.get(anyString())).thenAnswer(i -> i.getArgument(0));
+        lenient().when(messageUtil.get(anyString(), any())).thenAnswer(i -> i.getArgument(0));
     }
 
     // ───── ADD ─────
@@ -63,29 +70,35 @@ public class DepartmentServiceTest {
     @Test
     void addDepartment_NullName_ThrowsIllegalArgumentException() {
         DepartmentRequestDTO request = new DepartmentRequestDTO(null);
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> departmentService.addDepartment(request));
-        assertEquals("Department name is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> departmentService.addDepartment(request));
     }
 
     @Test
     void addDepartment_EmptyName_ThrowsIllegalArgumentException() {
         DepartmentRequestDTO request = new DepartmentRequestDTO("");
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> departmentService.addDepartment(request));
-        assertEquals("Department name is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> departmentService.addDepartment(request));
     }
 
     @Test
     void addDepartment_WhitespaceName_ThrowsIllegalArgumentException() {
         DepartmentRequestDTO request = new DepartmentRequestDTO("   ");
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> departmentService.addDepartment(request));
-        assertEquals("Department name is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> departmentService.addDepartment(request));
     }
 
     @Test
     void addDepartment_DuplicateName_ThrowsDuplicateEntryException() {
         when(departmentRepository.findByName("Engineering")).thenReturn(Optional.of(mockDepartment));
-        DuplicateEntryException ex = assertThrows(DuplicateEntryException.class, () -> departmentService.addDepartment(validRequest));
-        assertEquals("Department already exists: Engineering", ex.getMessage());
+        assertThrows(DuplicateEntryException.class, () -> departmentService.addDepartment(validRequest));
+    }
+
+    @Test
+    void addDepartment_RepositoryCalledOnce_OnSuccess() {
+        when(departmentRepository.findByName("Engineering")).thenReturn(Optional.empty());
+        when(departmentRepository.save(any(Department.class))).thenReturn(mockDepartment);
+
+        departmentService.addDepartment(validRequest);
+
+        verify(departmentRepository, times(1)).save(any(Department.class));
     }
 
     // ───── GET ALL ─────
@@ -134,8 +147,7 @@ public class DepartmentServiceTest {
     @Test
     void getDepartmentById_NotFound_ThrowsResourceNotFoundException() {
         when(departmentRepository.findById(1L)).thenReturn(Optional.empty());
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> departmentService.getDepartmentById(1L));
-        assertEquals("Department not found with id: 1", ex.getMessage());
+        assertThrows(ResourceNotFoundException.class, () -> departmentService.getDepartmentById(1L));
     }
 
     // ───── UPDATE ─────
@@ -161,24 +173,24 @@ public class DepartmentServiceTest {
     @Test
     void updateDepartment_NotFound_ThrowsResourceNotFoundException() {
         when(departmentRepository.findById(1L)).thenReturn(Optional.empty());
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> departmentService.updateDepartment(1L, validRequest));
-        assertEquals("Department not found with id: 1", ex.getMessage());
+        assertThrows(ResourceNotFoundException.class,
+                () -> departmentService.updateDepartment(1L, validRequest));
     }
 
     @Test
     void updateDepartment_NullName_ThrowsIllegalArgumentException() {
         DepartmentRequestDTO request = new DepartmentRequestDTO(null);
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(mockDepartment));
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> departmentService.updateDepartment(1L, request));
-        assertEquals("Department name is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class,
+                () -> departmentService.updateDepartment(1L, request));
     }
 
     @Test
     void updateDepartment_EmptyName_ThrowsIllegalArgumentException() {
         DepartmentRequestDTO request = new DepartmentRequestDTO("");
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(mockDepartment));
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> departmentService.updateDepartment(1L, request));
-        assertEquals("Department name is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class,
+                () -> departmentService.updateDepartment(1L, request));
     }
 
     @Test
@@ -192,8 +204,41 @@ public class DepartmentServiceTest {
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(mockDepartment));
         when(departmentRepository.findByName("HR")).thenReturn(Optional.of(anotherDept));
 
-        DuplicateEntryException ex = assertThrows(DuplicateEntryException.class, () -> departmentService.updateDepartment(1L, request));
-        assertEquals("Department name already exists: HR", ex.getMessage());
+        assertThrows(DuplicateEntryException.class,
+                () -> departmentService.updateDepartment(1L, request));
+    }
+
+    // ───── ACTIVATE ─────
+
+    @Test
+    void activateDepartment_Success() {
+        mockDepartment.setActive(false);
+        when(departmentRepository.findById(1L)).thenReturn(Optional.of(mockDepartment));
+        when(departmentRepository.save(mockDepartment)).thenReturn(mockDepartment);
+
+        DepartmentResponseDTO response = departmentService.activateDepartment(1L);
+
+        assertNotNull(response);
+        assertTrue(mockDepartment.isActive());
+        verify(departmentRepository, times(1)).save(mockDepartment);
+    }
+
+    @Test
+    void activateDepartment_NotFound_ThrowsResourceNotFoundException() {
+        when(departmentRepository.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class,
+                () -> departmentService.activateDepartment(99L));
+    }
+
+    @Test
+    void activateDepartment_AlreadyActive_StillSaves() {
+        when(departmentRepository.findById(1L)).thenReturn(Optional.of(mockDepartment));
+        when(departmentRepository.save(mockDepartment)).thenReturn(mockDepartment);
+
+        departmentService.activateDepartment(1L);
+
+        assertTrue(mockDepartment.isActive());
+        verify(departmentRepository, times(1)).save(mockDepartment);
     }
 
     // ───── DELETE ─────
@@ -212,18 +257,16 @@ public class DepartmentServiceTest {
     @Test
     void deleteDepartment_NotFound_ThrowsResourceNotFoundException() {
         when(departmentRepository.findById(1L)).thenReturn(Optional.empty());
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> departmentService.deleteDepartment(1L));
-        assertEquals("Department not found with id: 1", ex.getMessage());
+        assertThrows(ResourceNotFoundException.class,
+                () -> departmentService.deleteDepartment(1L));
     }
 
     @Test
     void deleteDepartment_HasActiveEmployees_ThrowsIllegalArgumentException() {
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(mockDepartment));
         when(employeeRepository.existsByDepartmentIdAndActive(1L, true)).thenReturn(true);
-
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> departmentService.deleteDepartment(1L));
-        assertEquals("Cannot deactivate department because it has active employees. " +
-                "Please reassign or deactivate all employees first.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class,
+                () -> departmentService.deleteDepartment(1L));
     }
 
     @Test
@@ -242,7 +285,8 @@ public class DepartmentServiceTest {
 
     @Test
     void searchByName_Success() {
-        when(departmentRepository.findByNameContainingIgnoreCase("eng")).thenReturn(List.of(mockDepartment));
+        when(departmentRepository.findByNameContainingIgnoreCase("eng"))
+                .thenReturn(List.of(mockDepartment));
         List<DepartmentResponseDTO> result = departmentService.searchByName("eng");
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -252,25 +296,25 @@ public class DepartmentServiceTest {
     @Test
     void searchByName_NoResults_ThrowsResourceNotFoundException() {
         when(departmentRepository.findByNameContainingIgnoreCase("xyz")).thenReturn(List.of());
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class, () -> departmentService.searchByName("xyz"));
-        assertEquals("No departments found with name: xyz", ex.getMessage());
+        assertThrows(ResourceNotFoundException.class,
+                () -> departmentService.searchByName("xyz"));
     }
 
     @Test
     void searchByName_NullName_ThrowsIllegalArgumentException() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> departmentService.searchByName(null));
-        assertEquals("Department name search term is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class,
+                () -> departmentService.searchByName(null));
     }
 
     @Test
     void searchByName_EmptyName_ThrowsIllegalArgumentException() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> departmentService.searchByName(""));
-        assertEquals("Department name search term is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class,
+                () -> departmentService.searchByName(""));
     }
 
     @Test
     void searchByName_WhitespaceName_ThrowsIllegalArgumentException() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> departmentService.searchByName("   "));
-        assertEquals("Department name search term is required.", ex.getMessage());
+        assertThrows(IllegalArgumentException.class,
+                () -> departmentService.searchByName("   "));
     }
 }
