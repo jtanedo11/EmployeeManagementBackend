@@ -72,12 +72,14 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             Pageable pageable);
 
     // Query for averages
-    @Query("SELECT e FROM Employee e WHERE e.active = true " +
+    @Query("SELECT e FROM Employee e WHERE (:active IS NULL OR e.active = :active) " +
             "AND (:departmentId IS NULL OR e.department.id = :departmentId) " +
             "AND (:minDob IS NULL OR e.dateOfBirth <= :minDob) " +
             "AND (:maxDob IS NULL OR e.dateOfBirth >= :maxDob)")
     List<Employee> findForStats(
             @Param("departmentId") Long departmentId,
+            @Param("active") Boolean active,
             @Param("minDob") LocalDate minDob,
             @Param("maxDob") LocalDate maxDob);
+
 }

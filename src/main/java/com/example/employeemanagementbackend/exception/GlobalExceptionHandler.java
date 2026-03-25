@@ -38,6 +38,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
+    // 403 - Deactivated Account Login
+    @ExceptionHandler(AccountDeactivatedException.class)
+    public ResponseEntity<ErrorResponse> handleAccountDeactivated(AccountDeactivatedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse(403, ex.getMessage(), LocalDateTime.now()));
+    }
+
     // 400 - Validation errors (@NotBlank, @Size, @Past etc.)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
@@ -65,13 +72,6 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-    }
-
-    // 403 - Deactivated Account Login
-    @ExceptionHandler(AccountDeactivatedException.class)
-    public ResponseEntity<ErrorResponse> handleAccountDeactivated(AccountDeactivatedException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(new ErrorResponse(403, ex.getMessage(), LocalDateTime.now()));
     }
 
     // 500 - Any other unexpected exception

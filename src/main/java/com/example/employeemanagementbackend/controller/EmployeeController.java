@@ -112,17 +112,19 @@ public class EmployeeController {
     @GetMapping("${api.employees.stats.salary}")
     public ResponseEntity<BigDecimal> getAverageSalary(
             @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Boolean active,
             @RequestParam(required = false) Integer minAge,
             @RequestParam(required = false) Integer maxAge) {
-        return ResponseEntity.ok(employeeService.getAverageSalary(departmentId, minAge, maxAge));
+        return ResponseEntity.ok(employeeService.getAverageSalary(departmentId, active, minAge, maxAge));
     }
 
     @GetMapping("${api.employees.stats.age}")
     public ResponseEntity<Double> getAverageAge(
             @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Boolean active,
             @RequestParam(required = false) Integer minAge,
             @RequestParam(required = false) Integer maxAge) {
-        return ResponseEntity.ok(employeeService.getAverageAge(departmentId, minAge, maxAge));
+        return ResponseEntity.ok(employeeService.getAverageAge(departmentId, active, minAge, maxAge));
     }
 
 }

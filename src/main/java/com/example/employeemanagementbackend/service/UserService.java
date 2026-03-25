@@ -210,6 +210,7 @@ public class UserService {
         response.setId(user.getId());
         response.setFirstName(user.getFirstName());
         response.setLastName(user.getLastName());
+        response.setFullName(user.getFullName());
         response.setUsername(user.getUsername());
         response.setRole(user.getRole().name());
         response.setActive(user.isActive());

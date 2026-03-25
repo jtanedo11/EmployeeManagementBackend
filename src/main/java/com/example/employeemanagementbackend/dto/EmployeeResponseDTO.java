@@ -17,6 +17,7 @@ public class EmployeeResponseDTO {
     private Long employeeId;
     private String firstName;
     private String lastName;
+    private String fullName;
     private Integer age;
     private LocalDate dateOfBirth;
     private String departmentName;

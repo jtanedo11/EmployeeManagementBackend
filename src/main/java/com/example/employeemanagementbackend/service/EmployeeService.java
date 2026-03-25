@@ -219,20 +219,20 @@ public class EmployeeService {
 
     // ───── Calculations ─────
 
-    public BigDecimal getAverageSalary(Long departmentId, Integer minAge, Integer maxAge) {
+    public BigDecimal getAverageSalary(Long departmentId, Boolean active, Integer minAge, Integer maxAge) {
         LocalDate minDob = (minAge != null) ? LocalDate.now().minusYears(minAge) : null;
         LocalDate maxDob = (maxAge != null) ? LocalDate.now().minusYears(maxAge + 1).plusDays(1) : null;
-        List<Employee> employees = employeeRepository.findForStats(departmentId, minDob, maxDob);
+        List<Employee> employees = employeeRepository.findForStats(departmentId, active, minDob, maxDob);
         if (employees.isEmpty()) return BigDecimal.ZERO;
         BigDecimal total = BigDecimal.ZERO;
         for (Employee emp : employees) total = total.add(emp.getSalary());
         return total.divide(BigDecimal.valueOf(employees.size()), 2, RoundingMode.HALF_UP);
     }
 
-    public double getAverageAge(Long departmentId, Integer minAge, Integer maxAge) {
+    public double getAverageAge(Long departmentId, Boolean active, Integer minAge, Integer maxAge) {
         LocalDate minDob = (minAge != null) ? LocalDate.now().minusYears(minAge) : null;
         LocalDate maxDob = (maxAge != null) ? LocalDate.now().minusYears(maxAge + 1).plusDays(1) : null;
-        List<Employee> employees = employeeRepository.findForStats(departmentId, minDob, maxDob);
+        List<Employee> employees = employeeRepository.findForStats(departmentId, active, minDob, maxDob);
         if (employees.isEmpty()) return 0.0;
         int totalAge = 0;
         for (Employee emp : employees) totalAge += emp.getAge();
@@ -259,6 +259,7 @@ public class EmployeeService {
         dto.setEmployeeId(employee.getEmployeeId());
         dto.setFirstName(employee.getFirstName());
         dto.setLastName(employee.getLastName());
+        dto.setFullName(employee.getFullName());
         dto.setDateOfBirth(employee.getDateOfBirth());
         dto.setAge(employee.getAge());
         dto.setDepartmentName(employee.getDepartment() != null
